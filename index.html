@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Box - Dark Mode</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 90%;
+            max-width: 400px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            overflow: hidden;
+        }
+        .header {
+            padding: 15px;
+            background-color: #2a2a2a;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            padding-bottom: 50px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background-color: #4caf50;
+            border-radius: 10px;
+            max-width: 70%;
+            margin-left: auto;
+            cursor: pointer;
+        }
+        .message img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        .message video {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        .footer {
+            padding: 10px;
+            background-color: #2a2a2a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: #fff;
+            outline: none;
+        }
+        .footer button, .plus-menu button {
+            padding: 10px;
+            border: none;
+            background-color: #4caf50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .footer button:hover, .plus-menu button:hover {
+            background-color: #45a049;
+        }
+        .plus-menu {
+            display: none;
+            flex-direction: column;
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
+            background-color: #2a2a2a;
+            border-radius: 5px;
+            padding: 5px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        .plus-menu button {
+            margin: 5px 0;
+        }
+        .hidden-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">Chat Box</div>
+        <div class="messages" id="messages"></div>
+        <div class="footer">
+            <input type="text" placeholder="Type a message..." id="messageInput">
+            <button onclick="sendMessage()">Send</button>
+            <button id="plusButton">+</button>
+        </div>
+        <div class="plus-menu" id="plusMenu">
+            <button onclick="document.getElementById('photoInput').click(); closePlusMenu()">Send Photos</button>
+            <button onclick="document.getElementById('videoInput').click(); closePlusMenu()">Send Videos</button>
+            <button onclick="document.getElementById('audioInput').click(); closePlusMenu()">Send Audio</button>
+        </div>
+        <input type="file" id="photoInput" class="hidden-input" accept="image/*" multiple onchange="sendFiles('photo')">
+        <input type="file" id="videoInput" class="hidden-input" accept="video/*" multiple onchange="sendFiles('video')">
+        <input type="file" id="audioInput" class="hidden-input" accept="audio/*" multiple onchange="sendFiles('audio')">
+    </div>
+
+    <script>
+        const plusButton = document.getElementById('plusButton');
+        const plusMenu = document.getElementById('plusMenu');
+        const messages = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+
+        // Show and hide the plus menu
+        plusButton.addEventListener('click', () => {
+            plusMenu.style.display = plusMenu.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        // Close the plus menu after selecting an option
+        function closePlusMenu() {
+            plusMenu.style.display = 'none';
+        }
+
+        // Send text message
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText) {
+                addMessageToChat(messageText, 'text');
+                messageInput.value = '';
+            }
+        }
+
+        // Add text message to the chat
+        function addMessageToChat(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message sent';
+            messageDiv.textContent = content;
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Handle file selection (photos/videos/audios)
+        function sendFiles(type) {
+            const input = type === 'photo' ? document.getElementById('photoInput') : 
+                          type === 'video' ? document.getElementById('videoInput') : 
+                          document.getElementById('audioInput');
+            const files = input.files;
+            if (files.length > 0) {
+                for (let file of files) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const fileURL = e.target.result;
+                        if (type === 'audio') {
+                            addAudioToChat(fileURL);
+                        } else {
+                            addMediaToChat(fileURL, type);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+
+        // Add media (image/video) to the chat
+        function addMediaToChat(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message sent';
+
+            if (type === 'photo') {
+                const image = new Image();
+                image.src = content;
+                image.style.maxWidth = '100%';
+                image.style.borderRadius = '10px';
+                messageDiv.appendChild(image);
+            } else if (type === 'video') {
+                const video = document.createElement('video');
+                video.src = content;
+                video.controls = true;
+                video.style.maxWidth = '100%';
+                messageDiv.appendChild(video);
+            }
+
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Add audio to the chat
+        function addAudioToChat(content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message sent';
+            const audio = new Audio(content);
+            audio.controls = true;
+            messageDiv.appendChild(audio);
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
